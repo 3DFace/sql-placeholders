@@ -6,6 +6,8 @@ interface NodeVisitor {
 
 	function visitPlain(PlainNode $plain, $args);
 
+	function visitString(StringNode $string, $args);
+
 	function visitIdentityPlaceHolder(IdentityPlaceHolderNode $placeHolder, $args);
 
 	function visitStringPlaceHolder(StringPlaceHolderNode $placeHolder, $args);

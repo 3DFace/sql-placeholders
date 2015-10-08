@@ -38,6 +38,10 @@ class DefaultFormatter implements Formatter, NodeVisitor {
 		return $plain->text;
 	}
 
+	function visitString(StringNode $string, $args){
+		return $string->quote.call_user_func($this->escape_func, $string->text).$string->quote;
+	}
+
 	function visitIdentityPlaceHolder(IdentityPlaceHolderNode $placeHolder, $args){
 		$val = $placeHolder->source->acceptVisitor($this, $args);
 		return $this->formatValue($val, function ($v){

@@ -14,7 +14,7 @@ class DefaultParser implements Parser {
 	 * @return Node
 	 */
 	function parse($expression){
-		$this->expression = $expression;
+		$this->expression = strval($expression);
 		$this->len = strlen($expression);
 		$this->index = 0;
 		$node = $this->consumeNode();
@@ -184,6 +184,10 @@ class DefaultParser implements Parser {
 				case '{':
 					$node = $this->consumeCommandNode();
 					break;
+				case '"':
+				case '\'':
+					$node = $this->consumeString();
+					break;
 				default:
 					$node = $this->consumePlain();
 					break;
@@ -213,11 +217,9 @@ class DefaultParser implements Parser {
 					}
 					break;
 				case '{':
-					break 2;
 				case '"':
 				case '\'':
-					$plain .= $this->consumeString();
-					break;
+					break 2;
 				case '/':
 					$this->consume();
 					$c = $this->get(0); // eat '/'
@@ -266,21 +268,44 @@ class DefaultParser implements Parser {
 	private function consumeString(){
 		$location = $this->index;
 		$quota = $this->get(0);
-		$string = $quota;
+		$string = '';
 		$this->consume();
 		while(true){
 			$c = $this->get(0);
 			switch($c){
 				case $quota:
-					$string .= $quota;
 					$this->consume();
 					break 2;
 				case '\\':
-					$string .= $c;
 					$this->consume();
-					if($this->get(0) === $quota){
-						$string .= $quota;
-						$this->consume();
+					$c = $this->get(0);
+					switch($c){
+						case '\\':
+							$this->consume();
+							$string .= '\\';
+							break;
+						case 'n':
+							$this->consume();
+							$string .= "\n";
+							break;
+						case 't':
+							$this->consume();
+							$string .= "\t";
+							break;
+						case 'r':
+							$this->consume();
+							$string .= "\r";
+							break;
+						case '\'':
+						case '"':
+							$this->consume();
+							$string .= $c;
+							break;
+						case null:
+							throw new ParserException("Unexpected end of quoted string started at ".$location);
+						default:
+							$this->consume();
+							$string .= '\\'.$c;
 					}
 					break;
 				case null:
@@ -290,7 +315,7 @@ class DefaultParser implements Parser {
 					$this->consume();
 			}
 		}
-		return $string;
+		return new StringNode($location, $quota, $string);
 	}
 
 }
