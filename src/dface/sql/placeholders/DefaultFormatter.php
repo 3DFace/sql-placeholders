@@ -94,7 +94,7 @@ class DefaultFormatter implements Formatter, NodeVisitor {
 					$s = strval($v);
 					try{
 						$g = @gmp_init($s);
-						$v = $g ? gmp_strval($g) : (int)$s;
+						$v = ($g !== false) ? gmp_strval($g) : (int)$s;
 					}catch(\Exception $e){
 						$v = (int)$s;
 					}
