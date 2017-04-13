@@ -26,4 +26,12 @@ EOT;
 		$this->assertEquals("plain 'ignored {s}' \"ignored {d}\" `asd` '\\'zxc\\\\' 1", $formatted->__toString());
 	}
 
+	function testBinary(){
+		$parser = new DefaultParser();
+		$formatter = new DefaultFormatter();
+		$node = $parser->parse('{b}');
+		$formatted = $formatter->format($node, [hex2bin('af80')], 'addslashes');
+		$this->assertEquals('0xaf80', $formatted->__toString());
+	}
+
 }

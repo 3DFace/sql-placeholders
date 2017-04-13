@@ -66,6 +66,21 @@ class DefaultFormatter implements Formatter, NodeVisitor {
 		});
 	}
 
+	function visitBinaryPlaceHolder(BinaryPlaceHolderNode $placeHolder, $args){
+		$val = $placeHolder->source->acceptVisitor($this, $args);
+		return $this->formatValue($val, function ($v) use ($placeHolder){
+			if(is_null($v)){
+				return 'null';
+			}else{
+				if($v === ''){
+					return "''";
+				}else{
+					return '0x'.bin2hex($v);
+				}
+			}
+		});
+	}
+
 	function visitNumberPlaceHolder(NumberPlaceHolderNode $placeHolder, $args){
 		$val = $placeHolder->source->acceptVisitor($this, $args);
 		return $this->formatValue($val, function ($v) use ($placeHolder){

@@ -12,6 +12,8 @@ interface NodeVisitor {
 
 	function visitStringPlaceHolder(StringPlaceHolderNode $placeHolder, $args);
 
+	function visitBinaryPlaceHolder(BinaryPlaceHolderNode $placeHolder, $args);
+
 	function visitNumberPlaceHolder(NumberPlaceHolderNode $placeHolder, $args);
 
 	function visitIntegerPlaceHolder(IntegerPlaceHolderNode $placeHolder, $args);

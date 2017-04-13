@@ -102,6 +102,7 @@ class DefaultParser implements Parser {
 		}
 		switch($command){
 			case 's':
+			case 'b':
 			case 'n':
 			case 'i':
 			case 'd':
@@ -158,6 +159,9 @@ class DefaultParser implements Parser {
 		switch($type){
 			case 's':
 				$node = new StringPlaceHolderNode($location, $source, $notNull, $forceNull);
+				break;
+			case 'b':
+				$node = new BinaryPlaceHolderNode($location, $source, $notNull, $forceNull);
 				break;
 			case 'n':
 				$node = new NumberPlaceHolderNode($location, $source, $notNull, $forceNull);
