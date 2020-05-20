@@ -14,8 +14,8 @@ class DefaultParser implements Parser {
 	 * @return Node
 	 */
 	function parse($expression){
-		$this->expression = strval($expression);
-		$this->len = strlen($expression);
+		$this->expression = (string)$expression;
+		$this->len = \strlen($expression);
 		$this->index = 0;
 		$node = $this->consumeNode();
 		if(($c = $this->get(0)) !== null){
@@ -33,6 +33,10 @@ class DefaultParser implements Parser {
 		return $j < $this->len ? $this->expression[$j] : null;
 	}
 
+	/**
+	 * @param $match
+	 * @throws ParserException
+	 */
 	private function sureConsume($match){
 		if($this->get(0) !== $match){
 			throw new ParserException($match." expected at ".$this->index, $this->index);
@@ -57,7 +61,7 @@ class DefaultParser implements Parser {
 				break;
 			}
 		}
-		return new IndexAnchorNode(intval($anchor));
+		return new IndexAnchorNode((int)$anchor);
 	}
 
 	private function consumeKeyAnchor(){
@@ -65,7 +69,7 @@ class DefaultParser implements Parser {
 		$this->consume();
 		while(true){
 			$c = $this->get(0);
-			if(ctype_alnum($c) || $c === '_'){
+			if($c === '_' || \ctype_alnum($c)){
 				$this->consume();
 				$anchor .= $c;
 			}else{
@@ -86,6 +90,10 @@ class DefaultParser implements Parser {
 		return $anchor;
 	}
 
+	/**
+	 * @return BinaryPlaceHolderNode|IdentityPlaceHolderNode|IntegerPlaceHolderNode|NumberPlaceHolderNode|StringPlaceHolderNode
+	 * @throws ParserException
+	 */
 	private function consumeCommandNode(){
 		$location = $this->index;
 		$this->sureConsume('{');
@@ -93,7 +101,7 @@ class DefaultParser implements Parser {
 		$command = '';
 		while(true){
 			$c = $this->get(0);
-			if(ctype_alnum($c) || $c === '_'){
+			if($c === '_' || \ctype_alnum($c)){
 				$this->consume();
 				$command .= $c;
 			}else{
@@ -142,6 +150,12 @@ class DefaultParser implements Parser {
 		return $node;
 	}
 
+	/**
+	 * @param $type
+	 * @param $location
+	 * @return BinaryPlaceHolderNode|IdentityPlaceHolderNode|IntegerPlaceHolderNode|NumberPlaceHolderNode|StringPlaceHolderNode
+	 * @throws ParserException
+	 */
 	private function consumePlaceHolder($type, $location){
 		$notNull = false;
 		$forceNull = false;
@@ -178,6 +192,10 @@ class DefaultParser implements Parser {
 		return $node;
 	}
 
+	/**
+	 * @return CompositeNode|mixed
+	 * @throws ParserException
+	 */
 	private function consumeNode(){
 		$list = array();
 		while(true){
@@ -198,9 +216,13 @@ class DefaultParser implements Parser {
 			}
 			$list[] = $node;
 		}
-		return count($list) == 1 ? $list[0] : new CompositeNode($list);
+		return \count($list) === 1 ? $list[0] : new CompositeNode($list);
 	}
 
+	/**
+	 * @return PlainNode
+	 * @throws ParserException
+	 */
 	private function consumePlain(){
 		$location = $this->index;
 		$plain = '';
@@ -222,6 +244,7 @@ class DefaultParser implements Parser {
 					break;
 				case '{':
 				case '"':
+				case null:
 				case '\'':
 					break 2;
 				case '/':
@@ -234,8 +257,6 @@ class DefaultParser implements Parser {
 						$plain .= '/'.$c;
 					}
 					break;
-				case null:
-					break 2;
 				default:
 					$plain .= $c;
 					$this->consume();
@@ -244,6 +265,10 @@ class DefaultParser implements Parser {
 		return new PlainNode($location, $plain);
 	}
 
+	/**
+	 * @return string
+	 * @throws ParserException
+	 */
 	private function consumeBlockComment(){
 		$location = $this->index - 1;
 		$this->consume(); // eat '*'
@@ -269,6 +294,10 @@ class DefaultParser implements Parser {
 		return $string;
 	}
 
+	/**
+	 * @return StringNode
+	 * @throws ParserException
+	 */
 	private function consumeString(){
 		$location = $this->index;
 		$quota = $this->get(0);

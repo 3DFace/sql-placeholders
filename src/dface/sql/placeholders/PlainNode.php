@@ -18,7 +18,7 @@ class PlainNode implements Node {
 	}
 
 	function __toString(){
-		return $this->text;
+		return (string)$this->text;
 	}
 
 }

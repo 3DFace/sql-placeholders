@@ -2,7 +2,8 @@
 
 namespace dface\sql\placeholders;
 
-class DefaultFormatter implements Formatter, NodeVisitor {
+class DefaultFormatter implements Formatter, NodeVisitor
+{
 
 	/** @var Callable */
 	private $escape_func;
@@ -14,104 +15,108 @@ class DefaultFormatter implements Formatter, NodeVisitor {
 	 * @param $escape_func Callable
 	 * @return PlainNode
 	 */
-	function format(Node $format, $args, $escape_func){
+	function format(Node $format, $args, $escape_func)
+	{
 		$this->escape_func = $escape_func;
 		$this->anonymousIndex = 1;
 		return new PlainNode(0, $format->acceptVisitor($this, $args));
 	}
 
-	private function formatValue($val, $escape_func){
-		if(is_array($val)){
-			if(!empty($val)){
+	private function formatValue($val, $escape_func)
+	{
+		if (is_array($val)) {
+			if (!empty($val)) {
 				$val = array_map($escape_func, $val);
 				$val = implode(", ", $val);
-			}else{
+			}else {
 				$val = 'null';
 			}
-		}else{
+		}else {
 			$val = $escape_func($val);
 		}
 		return $val;
 	}
 
-	function visitPlain(PlainNode $plain, $args){
+	function visitPlain(PlainNode $plain, $args)
+	{
 		return $plain->text;
 	}
 
-	function visitString(StringNode $string, $args){
+	function visitString(StringNode $string, $args)
+	{
 		return $string->quote.call_user_func($this->escape_func, $string->text).$string->quote;
 	}
 
-	function visitIdentityPlaceHolder(IdentityPlaceHolderNode $placeHolder, $args){
+	function visitIdentityPlaceHolder(IdentityPlaceHolderNode $placeHolder, $args)
+	{
 		$val = $placeHolder->source->acceptVisitor($this, $args);
-		return $this->formatValue($val, function ($v){
-			return "`".str_replace("`", "``", $v)."`";
+		return $this->formatValue($val, static function ($v) {
+			return "`".\str_replace("`", "``", $v)."`";
 		});
 	}
 
-	function visitStringPlaceHolder(StringPlaceHolderNode $placeHolder, $args){
+	function visitStringPlaceHolder(StringPlaceHolderNode $placeHolder, $args)
+	{
 		$val = $placeHolder->source->acceptVisitor($this, $args);
 		$escape_func = $this->escape_func;
-		return $this->formatValue($val, function ($v) use ($escape_func, $placeHolder){
-			if(is_null($v) && !$placeHolder->notNull){
+		return $this->formatValue($val, static function ($v) use ($escape_func, $placeHolder) {
+			if (!$placeHolder->notNull && $v === null) {
 				$v = 'null';
-			}else{
-				if($placeHolder->forceNull && $v === ''){
-					$v = 'null';
-				}else{
-					$v = "'".$escape_func(strval($v))."'";
-				}
+			}elseif ($placeHolder->forceNull && $v === '') {
+				$v = 'null';
+			}else {
+				$v = "'".$escape_func((string)$v)."'";
 			}
 			return $v;
 		});
 	}
 
-	function visitBinaryPlaceHolder(BinaryPlaceHolderNode $placeHolder, $args){
+	function visitBinaryPlaceHolder(BinaryPlaceHolderNode $placeHolder, $args)
+	{
 		$val = $placeHolder->source->acceptVisitor($this, $args);
-		return $this->formatValue($val, function ($v) use ($placeHolder){
-			if(is_null($v)){
+		return $this->formatValue($val, static function ($v) {
+			if ($v === null) {
 				return 'null';
-			}else{
-				if($v === ''){
-					return "''";
-				}else{
-					return '0x'.bin2hex($v);
-				}
 			}
+			if ($v === '') {
+				return "''";
+			}
+			return '0x'.bin2hex($v);
 		});
 	}
 
-	function visitNumberPlaceHolder(NumberPlaceHolderNode $placeHolder, $args){
+	function visitNumberPlaceHolder(NumberPlaceHolderNode $placeHolder, $args)
+	{
 		$val = $placeHolder->source->acceptVisitor($this, $args);
-		return $this->formatValue($val, function ($v) use ($placeHolder){
-			if(is_null($v) && !$placeHolder->notNull){
+		return $this->formatValue($val, static function ($v) use ($placeHolder) {
+			if (!$placeHolder->notNull && $v === null) {
 				$v = 'null';
-			}else{
-				if($placeHolder->forceNull && $v == 0){
-					$v = 'null';
-				}else{
-					$v = str_replace(',', '.', strval(0 + $v));
-				}
+			}/** @noinspection TypeUnsafeComparisonInspection */
+			elseif ($placeHolder->forceNull && $v == 0) {
+				$v = 'null';
+			}else {
+				$v = \str_replace(',', '.', (string)(0 + $v));
 			}
 			return $v;
 		});
 	}
 
-	function visitIntegerPlaceHolder(IntegerPlaceHolderNode $placeHolder, $args){
+	function visitIntegerPlaceHolder(IntegerPlaceHolderNode $placeHolder, $args)
+	{
 		$val = $placeHolder->source->acceptVisitor($this, $args);
-		return $this->formatValue($val, function ($v) use ($placeHolder){
-			if(is_null($v) && !$placeHolder->notNull){
+		return $this->formatValue($val, static function ($v) use ($placeHolder) {
+			if (!$placeHolder->notNull && $v === null) {
 				$v = 'null';
-			}else{
-				if($placeHolder->forceNull && $v == 0){
-					$v = 'null';
-				}else{
-					$s = strval($v);
-					try{
-						$g = @gmp_init($s);
-						$v = ($g !== false) ? gmp_strval($g) : (int)$s;
-					}catch(\Exception $e){
-						$v = (int)$s;
+			}/** @noinspection TypeUnsafeComparisonInspection */
+			elseif ($placeHolder->forceNull && $v == 0) {
+				$v = 'null';
+			}else {
+				if (!\is_int($v)) {
+					$v = (string)$v;
+					if(\preg_match('/^\s*([-+])?0*(\d+)\s*$/', $v, $m)){
+						$v = ($m[1] === '-' ? '-' : '').$m[2];
+					}else{
+						$v = (int)$v;
 					}
 				}
 			}
@@ -119,61 +124,84 @@ class DefaultFormatter implements Formatter, NodeVisitor {
 		});
 	}
 
-	function visitComposite(CompositeNode $composite, $args){
+	function visitComposite(CompositeNode $composite, $args)
+	{
 		$result = '';
-		foreach($composite->nodes as $node){
+		foreach ($composite->nodes as $node) {
 			$result .= $node->acceptVisitor($this, $args);
 		}
 		return $result;
 	}
 
-	function visitKeyAnchor(KeyAnchorNode $keyAnchor, $args){
-		if(is_array($args)){
-			if(array_key_exists($keyAnchor->key, $args)){
+	/**
+	 * @param KeyAnchorNode $keyAnchor
+	 * @param $args
+	 * @return mixed
+	 * @throws FormatterException
+	 */
+	function visitKeyAnchor(KeyAnchorNode $keyAnchor, $args)
+	{
+		if (is_array($args)) {
+			if (array_key_exists($keyAnchor->key, $args)) {
 				return $args[$keyAnchor->key];
-			}else{
-				throw new FormatterException('There is no argument at key "'.$keyAnchor->key.'"');
 			}
-		}elseif(is_object($args)){
-			if(property_exists($args, $keyAnchor->key)){
-				return $args->{$keyAnchor->key};
-			}else{
-				throw new FormatterException('There is no argument at key "'.$keyAnchor->key.'"');
-			}
-		}else{
-			throw new FormatterException('Argument not supports access by key');
+			throw new FormatterException('There is no argument at key "'.$keyAnchor->key.'"');
 		}
-
+		if (is_object($args)) {
+			if (property_exists($args, $keyAnchor->key)) {
+				return $args->{$keyAnchor->key};
+			}
+			throw new FormatterException('There is no argument at key "'.$keyAnchor->key.'"');
+		}
+		throw new FormatterException('Argument not supports access by key');
 	}
 
-	function visitIndexAnchor(IndexAnchorNode $indexAnchor, $args){
+	/**
+	 * @param IndexAnchorNode $indexAnchor
+	 * @param $args
+	 * @return mixed
+	 * @throws FormatterException
+	 */
+	function visitIndexAnchor(IndexAnchorNode $indexAnchor, $args)
+	{
 		$args = $this->castToIndexArray($args);
 		$i = $indexAnchor->index - 1;
-		if(array_key_exists($i, $args)){
+		if (\array_key_exists($i, $args)) {
 			return $args[$i];
-		}else{
-			throw new FormatterException('There is no argument at index '.$indexAnchor->index);
 		}
+		throw new FormatterException('There is no argument at index '.$indexAnchor->index);
 	}
 
-	function visitAnonymousAnchor(AnonymousAnchorNode $indexAnchor, $args){
+	/**
+	 * @param AnonymousAnchorNode $indexAnchor
+	 * @param $args
+	 * @return mixed
+	 * @throws FormatterException
+	 */
+	function visitAnonymousAnchor(AnonymousAnchorNode $indexAnchor, $args)
+	{
 		$args = $this->castToIndexArray($args);
 		$i = $this->anonymousIndex++ - 1;
-		if(array_key_exists($i, $args)){
+		if (\array_key_exists($i, $args)) {
 			return $args[$i];
-		}else{
-			throw new FormatterException('There is no argument at index '.($i + 1));
 		}
+		throw new FormatterException('There is no argument at index '.($i + 1));
 	}
 
-	protected function castToIndexArray($args){
-		if(is_array($args)){
-			$args = array_values($args);
-		}elseif(is_object($args)){
-			$args = get_object_vars($args);
-			$args = array_values($args);
-		}else{
-			throw new FormatterException("Argument of type '".gettype($args)."' not supports access by index");
+	/**
+	 * @param $args
+	 * @return array
+	 * @throws FormatterException
+	 */
+	protected function castToIndexArray($args)
+	{
+		if (\is_array($args)) {
+			$args = \array_values($args);
+		}elseif (\is_object($args)) {
+			$args = \get_object_vars($args);
+			$args = \array_values($args);
+		}else {
+			throw new FormatterException("Argument of type '".\gettype($args)."' not supports access by index");
 		}
 		return $args;
 	}
