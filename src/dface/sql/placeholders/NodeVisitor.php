@@ -1,29 +1,30 @@
-<?php /* author: Ponomarev Denis <ponomarev@gmail.com> */
+<?php
 
 namespace dface\sql\placeholders;
 
-interface NodeVisitor {
+interface NodeVisitor
+{
 
-	function visitPlain(PlainNode $plain, $args);
+	public function visitPlain(string $text);
 
-	function visitString(StringNode $string, $args);
+	public function visitString(string $text, string $quote);
 
-	function visitIdentityPlaceHolder(IdentityPlaceHolderNode $placeHolder, $args);
+	public function visitIdentityPlaceHolder(IdentityPlaceHolderNode $placeHolder, $args);
 
-	function visitStringPlaceHolder(StringPlaceHolderNode $placeHolder, $args);
+	public function visitStringPlaceHolder(StringPlaceHolderNode $placeHolder, $args);
 
-	function visitBinaryPlaceHolder(BinaryPlaceHolderNode $placeHolder, $args);
+	public function visitBinaryPlaceHolder(BinaryPlaceHolderNode $placeHolder, $args);
 
-	function visitNumberPlaceHolder(NumberPlaceHolderNode $placeHolder, $args);
+	public function visitNumberPlaceHolder(NumberPlaceHolderNode $placeHolder, $args);
 
-	function visitIntegerPlaceHolder(IntegerPlaceHolderNode $placeHolder, $args);
+	public function visitIntegerPlaceHolder(IntegerPlaceHolderNode $placeHolder, $args);
 
-	function visitComposite(CompositeNode $composite, $args);
+	public function visitComposite(array $nodes, $args);
 
-	function visitKeyAnchor(KeyAnchorNode $keyAnchor, $args);
+	public function visitKeyAnchor(string $key, $args);
 
-	function visitIndexAnchor(IndexAnchorNode $indexAnchor, $args);
+	public function visitIndexAnchor(int $index, $args);
 
-	function visitAnonymousAnchor(AnonymousAnchorNode $indexAnchor, $args);
+	public function visitAnonymousAnchor($args);
 
 }

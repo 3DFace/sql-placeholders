@@ -1,15 +1,15 @@
-<?php /* author: Ponomarev Denis <ponomarev@gmail.com> */
+<?php
 
 namespace dface\sql\placeholders;
 
-interface Node {
+interface Node
+{
 
 	/**
-	 * @abstract
 	 * @param NodeVisitor $visitor
-	 * @param $args mixed
+	 * @param mixed $args
 	 * @return mixed
 	 */
-	function acceptVisitor(NodeVisitor $visitor, $args);
+	public function acceptVisitor(NodeVisitor $visitor, $args);
 
 }

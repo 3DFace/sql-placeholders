@@ -1,10 +1,12 @@
-<?php /* author: Ponomarev Denis <ponomarev@gmail.com> */
+<?php
 
 namespace dface\sql\placeholders;
 
-class StringPlaceHolderNode extends PlaceHolderNode {
+class StringPlaceHolderNode extends PlaceHolderNode
+{
 
-	function acceptVisitor(NodeVisitor $visitor, $args){
+	public function acceptVisitor(NodeVisitor $visitor, $args)
+	{
 		return $visitor->visitStringPlaceHolder($this, $args);
 	}
 

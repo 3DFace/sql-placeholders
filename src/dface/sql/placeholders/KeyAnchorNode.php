@@ -1,20 +1,24 @@
-<?php /* author: Ponomarev Denis <ponomarev@gmail.com> */
+<?php
 
 namespace dface\sql\placeholders;
 
-class KeyAnchorNode implements Anchor {
+class KeyAnchorNode implements Anchor
+{
 
-	public $key;
+	private string $key;
 
-	function __construct($key){
+	public function __construct(string $key)
+	{
 		$this->key = $key;
 	}
 
-	function acceptVisitor(NodeVisitor $visitor, $args){
-		return $visitor->visitKeyAnchor($this, $args);
+	public function acceptVisitor(NodeVisitor $visitor, $args)
+	{
+		return $visitor->visitKeyAnchor($this->key, $args);
 	}
 
-	function __toString(){
+	public function __toString() : string
+	{
 		return '@'.$this->key;
 	}
 

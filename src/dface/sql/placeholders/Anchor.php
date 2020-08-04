@@ -1,7 +1,8 @@
-<?php /* author: Ponomarev Denis <ponomarev@gmail.com> */
+<?php
 
 namespace dface\sql\placeholders;
 
-interface Anchor extends Node {
+interface Anchor extends Node
+{
 
 }

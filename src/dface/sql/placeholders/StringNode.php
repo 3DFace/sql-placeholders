@@ -1,28 +1,26 @@
 <?php
-/* author: Ponomarev Denis <ponomarev@gmail.com> */
 
 namespace dface\sql\placeholders;
 
-class StringNode implements Node {
+class StringNode implements Node
+{
 
-	/** @var int */
-	var $location;
-	/** @var string */
-	var $quote;
-	/** @var string */
-	var $text;
+	private string $quote;
+	private string $text;
 
-	function __construct($location, $quote, $text){
-		$this->location = $location;
+	public function __construct(string $quote, string $text)
+	{
 		$this->quote = $quote;
 		$this->text = $text;
 	}
 
-	function acceptVisitor(NodeVisitor $visitor, $args){
-		return $visitor->visitString($this, $args);
+	public function acceptVisitor(NodeVisitor $visitor, $args)
+	{
+		return $visitor->visitString($this->text, $this->quote);
 	}
 
-	function __toString(){
+	public function __toString() : string
+	{
 		return $this->text;
 	}
 

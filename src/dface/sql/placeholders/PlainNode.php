@@ -1,24 +1,25 @@
-<?php /* author: Ponomarev Denis <ponomarev@gmail.com> */
+<?php
 
 namespace dface\sql\placeholders;
 
-class PlainNode implements Node {
+class PlainNode implements Node
+{
 
-	var $location;
-	/** @var string */
-	var $text;
+	private string $text;
 
-	function __construct($location, $text){
-		$this->location = $location;
+	public function __construct(string $text)
+	{
 		$this->text = $text;
 	}
 
-	function acceptVisitor(NodeVisitor $visitor, $args){
-		return $visitor->visitPlain($this, $args);
+	public function acceptVisitor(NodeVisitor $visitor, $args)
+	{
+		return $visitor->visitPlain($this->text);
 	}
 
-	function __toString(){
-		return (string)$this->text;
+	public function __toString() : string
+	{
+		return $this->text;
 	}
 
 }

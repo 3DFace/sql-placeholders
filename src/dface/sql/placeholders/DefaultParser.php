@@ -1,123 +1,127 @@
-<?php /* author: Ponomarev Denis <ponomarev@gmail.com> */
+<?php
 
 namespace dface\sql\placeholders;
 
-class DefaultParser implements Parser {
+class DefaultParser implements Parser
+{
 
-	private $expression;
-	private $index;
-	private $len;
+	private string $expression;
+	private int $index;
+	private int $len;
 
-	/**
-	 * @param $expression string
-	 * @throws ParserException
-	 * @return Node
-	 */
-	function parse($expression){
-		$this->expression = (string)$expression;
+	public function parse(string $expression) : Node
+	{
+		$this->expression = $expression;
 		$this->len = \strlen($expression);
 		$this->index = 0;
 		$node = $this->consumeNode();
-		if(($c = $this->get(0)) !== null){
+		if (($c = $this->get(0)) !== null) {
 			throw new ParserException("Unexpected character '".$c."' at ".$this->index);
 		}
 		return $node;
 	}
 
-	private function consume(){
+	private function consume() : void
+	{
 		$this->index++;
 	}
 
-	private function get($i){
+	private function get($i) : ?string
+	{
 		$j = $this->index + $i;
 		return $j < $this->len ? $this->expression[$j] : null;
 	}
 
 	/**
-	 * @param $match
+	 * @param string $match
 	 * @throws ParserException
 	 */
-	private function sureConsume($match){
-		if($this->get(0) !== $match){
+	private function sureConsume(string $match) : void
+	{
+		if ($this->get(0) !== $match) {
 			throw new ParserException($match." expected at ".$this->index, $this->index);
 		}
 		$this->consume();
 	}
 
-	private function consumeSpace(){
-		while(ctype_space($this->get(0))){
+	private function consumeSpace() : void
+	{
+		while (\ctype_space($this->get(0))) {
 			$this->consume();
 		}
 	}
 
-	private function consumeIndexAnchor(){
+	private function consumeIndexAnchor() : IndexAnchorNode
+	{
 		$anchor = '';
-		while(true){
+		while (true) {
 			$c = $this->get(0);
-			if(ctype_digit($c)){
+			if (\ctype_digit($c)) {
 				$this->consume();
 				$anchor .= $c;
-			}else{
+			}else {
 				break;
 			}
 		}
 		return new IndexAnchorNode((int)$anchor);
 	}
 
-	private function consumeKeyAnchor(){
+	private function consumeKeyAnchor() : KeyAnchorNode
+	{
 		$anchor = $this->get(0);
 		$this->consume();
-		while(true){
+		while (true) {
 			$c = $this->get(0);
-			if($c === '_' || \ctype_alnum($c)){
+			if ($c === '_' || \ctype_alnum($c)) {
 				$this->consume();
 				$anchor .= $c;
-			}else{
+			}else {
 				break;
 			}
 		}
 		return new KeyAnchorNode($anchor);
 	}
 
-	private function consumeAnchor(){
+	private function consumeAnchor()
+	{
 		$this->consumeSpace();
 		$c = $this->get(0);
-		if(is_numeric($c)){
+		if (\is_numeric($c)) {
 			$anchor = $this->consumeIndexAnchor();
-		}else{
+		}else {
 			$anchor = $this->consumeKeyAnchor();
 		}
 		return $anchor;
 	}
 
 	/**
-	 * @return BinaryPlaceHolderNode|IdentityPlaceHolderNode|IntegerPlaceHolderNode|NumberPlaceHolderNode|StringPlaceHolderNode
+	 * @return PlaceHolderNode
 	 * @throws ParserException
 	 */
-	private function consumeCommandNode(){
-		$location = $this->index;
+	private function consumePlaceHolderNode() : PlaceHolderNode
+	{
 		$this->sureConsume('{');
 		$this->consumeSpace();
-		$command = '';
-		while(true){
+		$type = '';
+		while (true) {
 			$c = $this->get(0);
-			if($c === '_' || \ctype_alnum($c)){
+			if ($c === '_' || \ctype_alnum($c)) {
 				$this->consume();
-				$command .= $c;
-			}else{
+				$type .= $c;
+			}else {
 				break;
 			}
 		}
-		switch($command){
+		switch ($type) {
 			case 's':
 			case 'b':
 			case 'n':
 			case 'i':
 			case 'd':
-				$node = $this->consumePlaceHolder($command, $location);
+				$node = $this->consumePlaceHolder($type);
 				break;
 			default:
-				throw new ParserException("Unknown type '$command'");
+				throw new ParserException("Unknown type '$type'");
 		}
 		$this->consumeSpace();
 		$this->sureConsume('}');
@@ -125,17 +129,18 @@ class DefaultParser implements Parser {
 	}
 
 	/**
-	 * @throws ParserException
 	 * @return Node | null
+	 * @throws ParserException
 	 */
-	private function consumeCommandArgument(){
+	private function consumePlaceHolderArgument()
+	{
 		$this->consumeSpace();
 		$c = $this->get(0);
-		if($c === ':'){
+		if ($c === ':') {
 			$this->consume();
 			$this->consumeSpace();
 			$c = $this->get(0);
-			switch($c){
+			switch ($c) {
 				case '}':
 					$node = AnonymousAnchorNode::$SHARED;
 					break;
@@ -144,47 +149,47 @@ class DefaultParser implements Parser {
 				default:
 					$node = $this->consumeAnchor();
 			}
-		}else{
+		}else {
 			$node = null;
 		}
 		return $node;
 	}
 
 	/**
-	 * @param $type
-	 * @param $location
-	 * @return BinaryPlaceHolderNode|IdentityPlaceHolderNode|IntegerPlaceHolderNode|NumberPlaceHolderNode|StringPlaceHolderNode
+	 * @param string $type
+	 * @return PlaceHolderNode
 	 * @throws ParserException
 	 */
-	private function consumePlaceHolder($type, $location){
+	private function consumePlaceHolder(string $type) : PlaceHolderNode
+	{
 		$notNull = false;
 		$forceNull = false;
-		if($this->get(0) === '+'){
+		if ($this->get(0) === '+') {
 			$this->consume();
 			$notNull = true;
 		}
-		if($this->get(0) === '-'){
+		if ($this->get(0) === '-') {
 			$this->consume();
 			$forceNull = true;
 		}
-		if(!($source = $this->consumeCommandArgument())){
+		if (!($source = $this->consumePlaceHolderArgument())) {
 			$source = AnonymousAnchorNode::$SHARED;
 		}
-		switch($type){
+		switch ($type) {
 			case 's':
-				$node = new StringPlaceHolderNode($location, $source, $notNull, $forceNull);
+				$node = new StringPlaceHolderNode($source, $notNull, $forceNull);
 				break;
 			case 'b':
-				$node = new BinaryPlaceHolderNode($location, $source, $notNull, $forceNull);
+				$node = new BinaryPlaceHolderNode($source, $notNull, $forceNull);
 				break;
 			case 'n':
-				$node = new NumberPlaceHolderNode($location, $source, $notNull, $forceNull);
+				$node = new NumberPlaceHolderNode($source, $notNull, $forceNull);
 				break;
 			case 'i':
-				$node = new IdentityPlaceHolderNode($location, $source, $notNull, $forceNull);
+				$node = new IdentityPlaceHolderNode($source, $notNull, $forceNull);
 				break;
 			case 'd':
-				$node = new IntegerPlaceHolderNode($location, $source, $notNull, $forceNull);
+				$node = new IntegerPlaceHolderNode($source, $notNull, $forceNull);
 				break;
 			default:
 				throw new ParserException('Unknown node type '.$type);
@@ -196,15 +201,16 @@ class DefaultParser implements Parser {
 	 * @return CompositeNode|mixed
 	 * @throws ParserException
 	 */
-	private function consumeNode(){
+	private function consumeNode()
+	{
 		$list = array();
-		while(true){
+		while (true) {
 			$c = $this->get(0);
-			switch($c){
+			switch ($c) {
 				case null:
 					break 2;
 				case '{':
-					$node = $this->consumeCommandNode();
+					$node = $this->consumePlaceHolderNode();
 					break;
 				case '"':
 				case '\'':
@@ -223,16 +229,16 @@ class DefaultParser implements Parser {
 	 * @return PlainNode
 	 * @throws ParserException
 	 */
-	private function consumePlain(){
-		$location = $this->index;
+	private function consumePlain() : PlainNode
+	{
 		$plain = '';
-		while(true){
+		while (true) {
 			$c = $this->get(0);
-			switch($c){
+			switch ($c) {
 				case '\\':
 					$this->consume();
 					$c = $this->get(0);
-					switch($c){
+					switch ($c) {
 						case '{':
 						case '}':
 							$this->consume();
@@ -250,9 +256,9 @@ class DefaultParser implements Parser {
 				case '/':
 					$this->consume();
 					$c = $this->get(0); // eat '/'
-					if($c === '*'){
+					if ($c === '*') {
 						$plain .= $this->consumeBlockComment();
-					}else{
+					}else {
 						$this->consume();
 						$plain .= '/'.$c;
 					}
@@ -262,24 +268,25 @@ class DefaultParser implements Parser {
 					$this->consume();
 			}
 		}
-		return new PlainNode($location, $plain);
+		return new PlainNode($plain);
 	}
 
 	/**
 	 * @return string
 	 * @throws ParserException
 	 */
-	private function consumeBlockComment(){
+	private function consumeBlockComment() : string
+	{
 		$location = $this->index - 1;
 		$this->consume(); // eat '*'
 		$string = '/*';
-		while(true){
+		while (true) {
 			$c = $this->get(0);
-			switch($c){
+			switch ($c) {
 				case '*':
 					$string .= $c;
 					$this->consume();
-					if($this->get(0) === '/'){
+					if ($this->get(0) === '/') {
 						$string .= '/';
 						$this->consume();
 					}
@@ -298,21 +305,22 @@ class DefaultParser implements Parser {
 	 * @return StringNode
 	 * @throws ParserException
 	 */
-	private function consumeString(){
+	private function consumeString() : StringNode
+	{
 		$location = $this->index;
 		$quota = $this->get(0);
 		$string = '';
 		$this->consume();
-		while(true){
+		while (true) {
 			$c = $this->get(0);
-			switch($c){
+			switch ($c) {
 				case $quota:
 					$this->consume();
 					break 2;
 				case '\\':
 					$this->consume();
 					$c = $this->get(0);
-					switch($c){
+					switch ($c) {
 						case '\\':
 							$this->consume();
 							$string .= '\\';
@@ -348,7 +356,7 @@ class DefaultParser implements Parser {
 					$this->consume();
 			}
 		}
-		return new StringNode($location, $quota, $string);
+		return new StringNode($quota, $string);
 	}
 
 }

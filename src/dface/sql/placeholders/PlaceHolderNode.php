@@ -1,27 +1,24 @@
-<?php /* author: Ponomarev Denis <ponomarev@gmail.com> */
+<?php
 
 namespace dface\sql\placeholders;
 
-abstract class PlaceHolderNode implements Node {
+abstract class PlaceHolderNode implements Node
+{
 
-	/** @var int */
-	var $location;
-	/** @var Node */
-	var $source;
-	/** @var bool */
-	var $notNull;
-	/** @var bool */
-	var $forceNull;
+	public Node $source;
+	public bool $notNull;
+	public bool $forceNull;
 
-	function __construct($location, Node $source, $notNull, $forceNull){
-		$this->location = $location;
+	public function __construct(Node $source, bool $notNull, bool $forceNull)
+	{
 		$this->source = $source;
 		$this->notNull = $notNull;
 		$this->forceNull = $forceNull;
 	}
 
-	function __toString(){
-		return sprintf('placeholder{%s}', $this->source);
+	public function __toString() : string
+	{
+		return \sprintf('placeholder{%s}', $this->source);
 	}
 
 }

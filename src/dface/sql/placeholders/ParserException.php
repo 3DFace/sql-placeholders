@@ -1,7 +1,8 @@
-<?php /* author: Ponomarev Denis <ponomarev@gmail.com> */
+<?php
 
 namespace dface\sql\placeholders;
 
-class ParserException extends \Exception {
+class ParserException extends \Exception
+{
 
 }

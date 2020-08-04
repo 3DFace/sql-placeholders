@@ -1,17 +1,17 @@
-<?php /* author: Ponomarev Denis <ponomarev@gmail.com> */
+<?php
 
 namespace dface\sql\placeholders;
 
-interface Formatter {
+interface Formatter
+{
 
 	/**
-	 * @abstract
 	 * @param $format Node
 	 * @param $args
 	 * @param $escape_func Callable
-	 * @throws FormatterException
 	 * @return PlainNode
+	 * @throws FormatterException
 	 */
-	function format(Node $format, $args, $escape_func);
+	public function format(Node $format, $args, callable $escape_func) : PlainNode;
 
 }

@@ -1,20 +1,24 @@
-<?php /* author: Ponomarev Denis <ponomarev@gmail.com> */
+<?php
 
 namespace dface\sql\placeholders;
 
-class IndexAnchorNode implements Anchor {
+class IndexAnchorNode implements Anchor
+{
 
-	var $index;
+	private int $index;
 
-	function __construct($index){
+	public function __construct(int $index)
+	{
 		$this->index = $index;
 	}
 
-	function acceptVisitor(NodeVisitor $visitor, $args){
-		return $visitor->visitIndexAnchor($this, $args);
+	public function acceptVisitor(NodeVisitor $visitor, $args)
+	{
+		return $visitor->visitIndexAnchor($this->index, $args);
 	}
 
-	function __toString(){
+	public function __toString() : string
+	{
 		return '@'.$this->index;
 	}
 

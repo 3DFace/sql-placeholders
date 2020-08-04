@@ -1,13 +1,13 @@
-<?php /* author: Ponomarev Denis <ponomarev@gmail.com> */
+<?php
 
 namespace dface\sql\placeholders;
 
 class DefaultFormatter implements Formatter, NodeVisitor
 {
 
-	/** @var Callable */
+	/** @var callable */
 	private $escape_func;
-	private $anonymousIndex;
+	private int $anonymousIndex;
 
 	/**
 	 * @param $format Node
@@ -15,19 +15,19 @@ class DefaultFormatter implements Formatter, NodeVisitor
 	 * @param $escape_func Callable
 	 * @return PlainNode
 	 */
-	function format(Node $format, $args, $escape_func)
+	public function format(Node $format, $args, callable $escape_func) : PlainNode
 	{
 		$this->escape_func = $escape_func;
 		$this->anonymousIndex = 1;
-		return new PlainNode(0, $format->acceptVisitor($this, $args));
+		return new PlainNode($format->acceptVisitor($this, $args));
 	}
 
-	private function formatValue($val, $escape_func)
+	private function formatValue($val, $escape_func) : string
 	{
-		if (is_array($val)) {
+		if (\is_array($val)) {
 			if (!empty($val)) {
-				$val = array_map($escape_func, $val);
-				$val = implode(", ", $val);
+				$val = \array_map($escape_func, $val);
+				$val = \implode(", ", $val);
 			}else {
 				$val = 'null';
 			}
@@ -37,29 +37,29 @@ class DefaultFormatter implements Formatter, NodeVisitor
 		return $val;
 	}
 
-	function visitPlain(PlainNode $plain, $args)
+	public function visitPlain(string $text) : string
 	{
-		return $plain->text;
+		return $text;
 	}
 
-	function visitString(StringNode $string, $args)
+	public function visitString(string $text, string $quote) : string
 	{
-		return $string->quote.call_user_func($this->escape_func, $string->text).$string->quote;
+		return $quote.($this->escape_func)($text).$quote;
 	}
 
-	function visitIdentityPlaceHolder(IdentityPlaceHolderNode $placeHolder, $args)
+	public function visitIdentityPlaceHolder(IdentityPlaceHolderNode $placeHolder, $args) : string
 	{
 		$val = $placeHolder->source->acceptVisitor($this, $args);
-		return $this->formatValue($val, static function ($v) {
+		return $this->formatValue($val, static function ($v) : string {
 			return "`".\str_replace("`", "``", $v)."`";
 		});
 	}
 
-	function visitStringPlaceHolder(StringPlaceHolderNode $placeHolder, $args)
+	public function visitStringPlaceHolder(StringPlaceHolderNode $placeHolder, $args) : string
 	{
 		$val = $placeHolder->source->acceptVisitor($this, $args);
 		$escape_func = $this->escape_func;
-		return $this->formatValue($val, static function ($v) use ($escape_func, $placeHolder) {
+		return $this->formatValue($val, static function ($v) use ($escape_func, $placeHolder) : string {
 			if (!$placeHolder->notNull && $v === null) {
 				$v = 'null';
 			}elseif ($placeHolder->forceNull && $v === '') {
@@ -71,21 +71,21 @@ class DefaultFormatter implements Formatter, NodeVisitor
 		});
 	}
 
-	function visitBinaryPlaceHolder(BinaryPlaceHolderNode $placeHolder, $args)
+	public function visitBinaryPlaceHolder(BinaryPlaceHolderNode $placeHolder, $args) : string
 	{
 		$val = $placeHolder->source->acceptVisitor($this, $args);
-		return $this->formatValue($val, static function ($v) {
+		return $this->formatValue($val, static function ($v) : string {
 			if ($v === null) {
 				return 'null';
 			}
 			if ($v === '') {
 				return "''";
 			}
-			return '0x'.bin2hex($v);
+			return '0x'.\bin2hex($v);
 		});
 	}
 
-	function visitNumberPlaceHolder(NumberPlaceHolderNode $placeHolder, $args)
+	public function visitNumberPlaceHolder(NumberPlaceHolderNode $placeHolder, $args) : string
 	{
 		$val = $placeHolder->source->acceptVisitor($this, $args);
 		return $this->formatValue($val, static function ($v) use ($placeHolder) {
@@ -101,7 +101,7 @@ class DefaultFormatter implements Formatter, NodeVisitor
 		});
 	}
 
-	function visitIntegerPlaceHolder(IntegerPlaceHolderNode $placeHolder, $args)
+	public function visitIntegerPlaceHolder(IntegerPlaceHolderNode $placeHolder, $args) : string
 	{
 		$val = $placeHolder->source->acceptVisitor($this, $args);
 		return $this->formatValue($val, static function ($v) use ($placeHolder) {
@@ -110,75 +110,72 @@ class DefaultFormatter implements Formatter, NodeVisitor
 			}/** @noinspection TypeUnsafeComparisonInspection */
 			elseif ($placeHolder->forceNull && $v == 0) {
 				$v = 'null';
-			}else {
-				if (!\is_int($v)) {
-					$v = (string)$v;
-					if(\preg_match('/^\s*([-+])?0*(\d+)\s*$/', $v, $m)){
-						$v = ($m[1] === '-' ? '-' : '').$m[2];
-					}else{
-						$v = (int)$v;
-					}
+			}elseif (!\is_int($v)) {
+				$v = (string)$v;
+				if (\preg_match('/^\s*([-+])?0*(\d+)\s*$/', $v, $m)) {
+					$v = ($m[1] === '-' ? '-' : '').$m[2];
+				}else {
+					$v = (int)$v;
 				}
 			}
 			return $v;
 		});
 	}
 
-	function visitComposite(CompositeNode $composite, $args)
+	public function visitComposite(array $nodes, $args) : string
 	{
 		$result = '';
-		foreach ($composite->nodes as $node) {
+		foreach ($nodes as $node) {
 			$result .= $node->acceptVisitor($this, $args);
 		}
 		return $result;
 	}
 
 	/**
-	 * @param KeyAnchorNode $keyAnchor
+	 * @param string $key
 	 * @param $args
 	 * @return mixed
 	 * @throws FormatterException
 	 */
-	function visitKeyAnchor(KeyAnchorNode $keyAnchor, $args)
+	public function visitKeyAnchor(string $key, $args)
 	{
-		if (is_array($args)) {
-			if (array_key_exists($keyAnchor->key, $args)) {
-				return $args[$keyAnchor->key];
+		if (\is_array($args)) {
+			if (\array_key_exists($key, $args)) {
+				return $args[$key];
 			}
-			throw new FormatterException('There is no argument at key "'.$keyAnchor->key.'"');
+			throw new FormatterException('There is no argument at key "'.$key.'"');
 		}
-		if (is_object($args)) {
-			if (property_exists($args, $keyAnchor->key)) {
-				return $args->{$keyAnchor->key};
+		if (\is_object($args)) {
+			if (\property_exists($args, $key)) {
+				return $args->{$key};
 			}
-			throw new FormatterException('There is no argument at key "'.$keyAnchor->key.'"');
+			throw new FormatterException('There is no argument at key "'.$key.'"');
 		}
 		throw new FormatterException('Argument not supports access by key');
 	}
 
 	/**
-	 * @param IndexAnchorNode $indexAnchor
+	 * @param int $index
 	 * @param $args
 	 * @return mixed
 	 * @throws FormatterException
 	 */
-	function visitIndexAnchor(IndexAnchorNode $indexAnchor, $args)
+	public function visitIndexAnchor(int $index, $args)
 	{
 		$args = $this->castToIndexArray($args);
-		$i = $indexAnchor->index - 1;
+		$i = $index - 1;
 		if (\array_key_exists($i, $args)) {
 			return $args[$i];
 		}
-		throw new FormatterException('There is no argument at index '.$indexAnchor->index);
+		throw new FormatterException('There is no argument at index '.$index);
 	}
 
 	/**
-	 * @param AnonymousAnchorNode $indexAnchor
 	 * @param $args
 	 * @return mixed
 	 * @throws FormatterException
 	 */
-	function visitAnonymousAnchor(AnonymousAnchorNode $indexAnchor, $args)
+	public function visitAnonymousAnchor($args)
 	{
 		$args = $this->castToIndexArray($args);
 		$i = $this->anonymousIndex++ - 1;
@@ -193,7 +190,7 @@ class DefaultFormatter implements Formatter, NodeVisitor
 	 * @return array
 	 * @throws FormatterException
 	 */
-	protected function castToIndexArray($args)
+	protected function castToIndexArray($args) : array
 	{
 		if (\is_array($args)) {
 			$args = \array_values($args);

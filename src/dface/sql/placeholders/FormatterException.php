@@ -1,7 +1,8 @@
-<?php /* author: Ponomarev Denis <ponomarev@gmail.com> */
+<?php
 
 namespace dface\sql\placeholders;
 
-class FormatterException extends \Exception {
+class FormatterException extends \Exception
+{
 
 }

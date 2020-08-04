@@ -1,21 +1,25 @@
-<?php /* author: Ponomarev Denis <ponomarev@gmail.com> */
+<?php
 
 namespace dface\sql\placeholders;
 
-class CompositeNode implements Node {
+class CompositeNode implements Node
+{
 
 	/** @var Node[] */
-	var $nodes;
+	private array $nodes;
 
-	function __construct($nodes){
+	public function __construct(array $nodes)
+	{
 		$this->nodes = $nodes;
 	}
 
-	function acceptVisitor(NodeVisitor $visitor, $args){
-		return $visitor->visitComposite($this, $args);
+	public function acceptVisitor(NodeVisitor $visitor, $args)
+	{
+		return $visitor->visitComposite($this->nodes, $args);
 	}
 
-	function __toString(){
-		return sprintf('composite{%s}', implode(", ", $this->nodes));
+	public function __toString() : string
+	{
+		return \sprintf('composite{%s}', \implode(", ", $this->nodes));
 	}
 }

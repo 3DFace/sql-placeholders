@@ -1,15 +1,15 @@
-<?php /* author: Ponomarev Denis <ponomarev@gmail.com> */
+<?php
 
 namespace dface\sql\placeholders;
 
-interface Parser {
+interface Parser
+{
 
 	/**
-	 * @abstract
-	 * @param $expression string
-	 * @throws ParserException
+	 * @param string $expression
 	 * @return Node
+	 * @throws ParserException
 	 */
-	function parse($expression);
+	public function parse(string $expression) : Node;
 
 }

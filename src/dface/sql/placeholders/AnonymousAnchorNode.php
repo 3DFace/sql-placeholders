@@ -1,17 +1,19 @@
-<?php /* author: Ponomarev Denis <ponomarev@gmail.com> */
+<?php
 
 namespace dface\sql\placeholders;
 
-class AnonymousAnchorNode implements Anchor {
+class AnonymousAnchorNode implements Anchor
+{
 
-	/** @var  AnonymousAnchorNode */
-	static $SHARED;
+	static AnonymousAnchorNode $SHARED;
 
-	function acceptVisitor(NodeVisitor $visitor, $args){
-		return $visitor->visitAnonymousAnchor($this, $args);
+	public function acceptVisitor(NodeVisitor $visitor, $args)
+	{
+		return $visitor->visitAnonymousAnchor($args);
 	}
 
-	function __toString(){
+	public function __toString() : string
+	{
 		return '@?';
 	}
 
