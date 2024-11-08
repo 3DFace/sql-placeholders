@@ -44,20 +44,43 @@ EOT;
 		self::assertEquals('0xaf80', $formatted->__toString());
 	}
 
+	public function testS() : void
+	{
+		// null
+		self::assertSame('null', $this->formatAs('s', null));
+		self::assertSame('null', $this->formatAs('s-', ''));
+		self::assertSame("''", $this->formatAs('s+', null));
+	}
+
+	public function testN() : void
+	{
+		self::assertSame('null', $this->formatAs('n', null));
+		self::assertSame('null', $this->formatAs('n-', 0));
+		self::assertSame('null', $this->formatAs('n-', ' '));
+	}
+
 	public function testD() : void
 	{
 		// null
 		self::assertSame('null', $this->formatAs('d', null));
+		self::assertSame('null', $this->formatAs('d-', 0));
+		self::assertSame('null', $this->formatAs('d-', ''));
+		self::assertSame('null', $this->formatAs('d-', '0'));
+		self::assertSame('null', $this->formatAs('d-', ' '));
 
-		//int val
+		// 0
+		self::assertSame('0', $this->formatAs('d+', null));
+		self::assertSame('0', $this->formatAs('d+', 0));
+		self::assertSame('0', $this->formatAs('d+', ''));
+		self::assertSame('0', $this->formatAs('d+', '0'));
+		self::assertSame('0', $this->formatAs('d+', ' '));
+
+		// val
 		self::assertSame('1', $this->formatAs('d', 1));
 		self::assertSame('-1', $this->formatAs('d', -1));
+		self::assertSame('1', $this->formatAs('d-', '1'));
+		self::assertSame('-1', $this->formatAs('d+', '-1'));
 
-		//str val
-		self::assertSame('1', $this->formatAs('d', '1'));
-		self::assertSame('1', $this->formatAs('d', '1 '));
-		self::assertSame('1', $this->formatAs('d', ' 1'));
-		self::assertSame('1', $this->formatAs('d', ' 1'));
 		if(PHP_VERSION_ID >= 70100){
 			self::assertSame('100', $this->formatAs('d', '1e2'));
 		}else{

@@ -90,12 +90,18 @@ class DefaultFormatter implements Formatter, NodeVisitor
 		$val = $placeHolder->source->acceptVisitor($this, $args);
 		return $this->formatValue($val, static function ($v) use ($placeHolder) {
 			if (!$placeHolder->notNull && $v === null) {
-				$v = 'null';
-			}/** @noinspection TypeUnsafeComparisonInspection */
-			elseif ($placeHolder->forceNull && $v == 0) {
-				$v = 'null';
-			}else {
-				$v = \str_replace(',', '.', (string)(0 + $v));
+				return 'null';
+			}
+			if (!\is_numeric($v)) {
+				$v = (string)$v;
+				if (\preg_match('/^\s*([+-])?([0-9]+([.][0-9]*)?|[.][0-9]+)\s*$/', $v, $m)) {
+					$v = (($m[1] === '-' ? '-' : '').$m[2]);
+				} else {
+					$v = (int)$v;
+				}
+			}
+			if ($placeHolder->forceNull && (int)$v === 0) {
+				return 'null';
 			}
 			return $v;
 		});
@@ -106,17 +112,18 @@ class DefaultFormatter implements Formatter, NodeVisitor
 		$val = $placeHolder->source->acceptVisitor($this, $args);
 		return $this->formatValue($val, static function ($v) use ($placeHolder) {
 			if (!$placeHolder->notNull && $v === null) {
-				$v = 'null';
-			}/** @noinspection TypeUnsafeComparisonInspection */
-			elseif ($placeHolder->forceNull && $v == 0) {
-				$v = 'null';
-			}elseif (!\is_int($v)) {
+				return 'null';
+			}
+			if (!\is_int($v)) {
 				$v = (string)$v;
 				if (\preg_match('/^\s*([-+])?0*(\d+)\s*$/', $v, $m)) {
 					$v = ($m[1] === '-' ? '-' : '').$m[2];
 				}else {
 					$v = (int)$v;
 				}
+			}
+			if ($placeHolder->forceNull && (int)$v === 0) {
+				return 'null';
 			}
 			return $v;
 		});
