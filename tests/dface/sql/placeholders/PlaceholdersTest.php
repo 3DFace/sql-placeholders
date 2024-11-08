@@ -57,6 +57,8 @@ EOT;
 		self::assertSame('null', $this->formatAs('n', null));
 		self::assertSame('null', $this->formatAs('n-', 0));
 		self::assertSame('null', $this->formatAs('n-', ' '));
+		self::assertSame('1.21', $this->formatAs('n-', '1.21'));
+		self::assertSame('1.21', $this->formatAs('n+', 1.21));
 	}
 
 	public function testD() : void
